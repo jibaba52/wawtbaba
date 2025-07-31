@@ -1,9 +1,8 @@
--- Grow a Garden ESP + Randomizer Script (With ESP Toggle & Full Egg Support)
+-- Grow a Garden ESP + Randomizer Script (With Full Egg Support)
 -- Main Use: Displays the exact pet you will hatch from any egg using ESP (Floating Text), allows randomizing what's inside the egg, and ensures that the shown pet is the one that hatches.
 -- Educational use only
 
--- ESP Toggle & Color Functions
-local ESP_ENABLED = true
+-- ESP Color Functions
 local RarityColors = {
   Common = Color3.fromRGB(200, 200, 200),
   Uncommon = Color3.fromRGB(85, 255, 85),
@@ -12,24 +11,6 @@ local RarityColors = {
   Legendary = Color3.fromRGB(255, 170, 0),
   Mythical = Color3.fromRGB(255, 0, 255)
 }
-
-function toggleESP()
-  ESP_ENABLED = not ESP_ENABLED
-  for _, esp in pairs(game.CoreGui:GetChildren()) do
-    if esp.Name == "EggESP" then
-      esp.Enabled = ESP_ENABLED
-    end
-  end
-end
-
--- UI Button to Toggle ESP
-local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
-ScreenGui.Name = "EggGUI"
-local Button = Instance.new("TextButton", ScreenGui)
-Button.Size = UDim2.new(0, 120, 0, 40)
-Button.Position = UDim2.new(0, 10, 0, 10)
-Button.Text = "Toggle ESP"
-Button.MouseButton1Click:Connect(toggleESP)
 
 -- ESP Display Function
 function displayESP(egg, petName, rarity)
@@ -45,6 +26,9 @@ function displayESP(egg, petName, rarity)
     txt.TextColor3 = RarityColors[rarity] or Color3.new(1, 1, 1)
     txt.BackgroundTransparency = 1
     txt.TextScaled = true
+  elseif egg:FindFirstChild("EggESP") then
+    egg.EggESP.TextLabel.Text = "Pet: " .. petName
+    egg.EggESP.TextLabel.TextColor3 = RarityColors[rarity] or Color3.new(1, 1, 1)
   end
 end
 
@@ -69,12 +53,57 @@ for _, egg in pairs(workspace:GetDescendants()) do
       if egg.Name == eggType then
         local petName, rarity = choosePet(pets)
         displayESP(egg, petName, rarity)
+
+        -- Store the selected pet inside the egg
+        if not egg:FindFirstChild("ForcedPet") then
+          local forced = Instance.new("StringValue")
+          forced.Name = "ForcedPet"
+          forced.Value = petName
+          forced.Parent = egg
+        else
+          egg.ForcedPet.Value = petName
+        end
       end
     end
   end
 end
 
--- Pet database remains unchanged
+-- Pet database (Eggs + Pets + Chances)
 local EggPets = {
-  -- (Same EggPets table as in current script)
+  ["Common Egg"] = {
+    {name = "Bunny", rarity = "Common", chance = 50},
+    {name = "Dog", rarity = "Common", chance = 35},
+    {name = "Cat", rarity = "Uncommon", chance = 15},
+  },
+  ["Common Summer Egg"] = {
+    {name = "Beach Dog", rarity = "Common", chance = 40},
+    {name = "Beach Cat", rarity = "Uncommon", chance = 30},
+    {name = "Crab", rarity = "Rare", chance = 30},
+  },
+  ["Zen Egg"] = {
+    {name = "Panda", rarity = "Uncommon", chance = 40},
+    {name = "Red Panda", rarity = "Rare", chance = 35},
+    {name = "Kitsune", rarity = "Epic", chance = 25},
+  },
+  ["Dinosaur Egg"] = {
+    {name = "Triceratops", rarity = "Uncommon", chance = 45},
+    {name = "T-Rex", rarity = "Rare", chance = 35},
+    {name = "Pterodactyl", rarity = "Epic", chance = 20},
+  },
+  ["Jungle Egg"] = {
+    {name = "Monkey", rarity = "Uncommon", chance = 50},
+    {name = "Tiger", rarity = "Rare", chance = 35},
+    {name = "Parrot", rarity = "Epic", chance = 15},
+  },
+  ["Ocean Egg"] = {
+    {name = "Clownfish", rarity = "Common", chance = 40},
+    {name = "Dolphin", rarity = "Rare", chance = 35},
+    {name = "Shark", rarity = "Legendary", chance = 25},
+  },
+  ["Mythical Egg"] = {
+    {name = "Phoenix", rarity = "Legendary", chance = 40},
+    {name = "Dragon", rarity = "Legendary", chance = 35},
+    {name = "Unicorn", rarity = "Mythical", chance = 25},
+  }
+}
 }
