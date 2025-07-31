@@ -9,7 +9,8 @@ local RarityColors = {
   Rare = Color3.fromRGB(85, 170, 255),
   Epic = Color3.fromRGB(170, 85, 255),
   Legendary = Color3.fromRGB(255, 170, 0),
-  Mythical = Color3.fromRGB(255, 0, 255)
+  Mythical = Color3.fromRGB(255, 0, 255),
+  Divine = Color3.fromRGB(255, 255, 102)
 }
 
 -- ESP Display Function
@@ -47,63 +48,110 @@ function choosePet(pets)
   return "Unknown", "Common"
 end
 
-for _, egg in pairs(workspace:GetDescendants()) do
-  if egg:IsA("Model") and egg:FindFirstChild("Head") then
-    for eggType, pets in pairs(EggPets) do
-      if egg.Name == eggType then
-        local petName, rarity = choosePet(pets)
-        displayESP(egg, petName, rarity)
-
-        -- Store the selected pet inside the egg
-        if not egg:FindFirstChild("ForcedPet") then
-          local forced = Instance.new("StringValue")
-          forced.Name = "ForcedPet"
-          forced.Value = petName
-          forced.Parent = egg
-        else
-          egg.ForcedPet.Value = petName
-        end
-      end
-    end
+function assignPetToEgg(egg, pets)
+  local petName, rarity = choosePet(pets)
+  displayESP(egg, petName, rarity)
+  if not egg:FindFirstChild("ForcedPet") then
+    local forced = Instance.new("StringValue")
+    forced.Name = "ForcedPet"
+    forced.Value = petName
+    forced.Parent = egg
+  else
+    egg.ForcedPet.Value = petName
   end
 end
 
 -- Pet database (Eggs + Pets + Chances)
 local EggPets = {
   ["Common Egg"] = {
-    {name = "Bunny", rarity = "Common", chance = 50},
-    {name = "Dog", rarity = "Common", chance = 35},
-    {name = "Cat", rarity = "Uncommon", chance = 15},
+    {name = "Golden Lab", rarity = "Common", chance = 33},
+    {name = "Dog", rarity = "Common", chance = 33},
+    {name = "Bunny", rarity = "Common", chance = 34},
   },
-  ["Common Summer Egg"] = {
-    {name = "Beach Dog", rarity = "Common", chance = 40},
-    {name = "Beach Cat", rarity = "Uncommon", chance = 30},
-    {name = "Crab", rarity = "Rare", chance = 30},
+  ["Uncommon Egg"] = {
+    {name = "Black Bunny", rarity = "Uncommon", chance = 25},
+    {name = "Chicken", rarity = "Uncommon", chance = 25},
+    {name = "Cat", rarity = "Uncommon", chance = 25},
+    {name = "Deer", rarity = "Uncommon", chance = 25},
   },
-  ["Zen Egg"] = {
-    {name = "Panda", rarity = "Uncommon", chance = 40},
-    {name = "Red Panda", rarity = "Rare", chance = 35},
-    {name = "Kitsune", rarity = "Epic", chance = 25},
+  ["Rare Egg"] = {
+    {name = "Orange Tabby", rarity = "Rare", chance = 33},
+    {name = "Spotted Deer", rarity = "Rare", chance = 25},
+    {name = "Pig", rarity = "Rare", chance = 16.7},
+    {name = "Rooster", rarity = "Rare", chance = 16.7},
+    {name = "Monkey", rarity = "Rare", chance = 8.3},
   },
-  ["Dinosaur Egg"] = {
-    {name = "Triceratops", rarity = "Uncommon", chance = 45},
-    {name = "T-Rex", rarity = "Rare", chance = 35},
-    {name = "Pterodactyl", rarity = "Epic", chance = 20},
-  },
-  ["Jungle Egg"] = {
-    {name = "Monkey", rarity = "Uncommon", chance = 50},
-    {name = "Tiger", rarity = "Rare", chance = 35},
-    {name = "Parrot", rarity = "Epic", chance = 15},
-  },
-  ["Ocean Egg"] = {
-    {name = "Clownfish", rarity = "Common", chance = 40},
-    {name = "Dolphin", rarity = "Rare", chance = 35},
-    {name = "Shark", rarity = "Legendary", chance = 25},
+  ["Legendary Egg"] = {
+    {name = "Cow", rarity = "Legendary", chance = 42.5},
+    {name = "Silver Monkey", rarity = "Legendary", chance = 42.5},
+    {name = "Sea Otter", rarity = "Legendary", chance = 10.6},
+    {name = "Turtle", rarity = "Legendary", chance = 2.1},
+    {name = "Polar Bear", rarity = "Legendary", chance = 2.1},
   },
   ["Mythical Egg"] = {
-    {name = "Phoenix", rarity = "Legendary", chance = 40},
-    {name = "Dragon", rarity = "Legendary", chance = 35},
-    {name = "Unicorn", rarity = "Mythical", chance = 25},
+    {name = "Grey Mouse", rarity = "Mythical", chance = 35.7},
+    {name = "Brown Mouse", rarity = "Mythical", chance = 26.7},
+    {name = "Squirrel", rarity = "Mythical", chance = 26.8},
+    {name = "Red Giant Ant", rarity = "Mythical", chance = 8.9},
+    {name = "Red Fox", rarity = "Mythical", chance = 1.8},
+  },
+  ["Bug Egg"] = {
+    {name = "Snail", rarity = "Divine", chance = 40},
+    {name = "Giant Ant", rarity = "Divine", chance = 30},
+    {name = "Caterpillar", rarity = "Divine", chance = 25},
+    {name = "Praying Mantis", rarity = "Divine", chance = 4},
+    {name = "Dragonfly", rarity = "Divine", chance = 1},
+  },
+  ["Zen Egg"] = {
+    {name = "Shiba Inu", rarity = "Rare", chance = 40},
+    {name = "Nihonzaru", rarity = "Rare", chance = 32},
+    {name = "Tanuki", rarity = "Epic", chance = 20.8},
+    {name = "Tanchozuru", rarity = "Epic", chance = 4.6},
+    {name = "Kappa", rarity = "Legendary", chance = 3.5},
+    {name = "Kitsune", rarity = "Mythical", chance = 0.08},
+  },
+  ["Dinosaur Egg"] = {
+    {name = "Raptor", rarity = "Rare", chance = 35},
+    {name = "Triceratops", rarity = "Rare", chance = 32.5},
+    {name = "Stegosaurus", rarity = "Epic", chance = 28},
+    {name = "Pterodactyl", rarity = "Legendary", chance = 3},
+    {name = "Brontosaurus", rarity = "Legendary", chance = 1},
+    {name = "T-Rex", rarity = "Mythical", chance = 0.5},
   }
 }
-}
+
+-- Initial assignment
+for _, egg in pairs(workspace:GetDescendants()) do
+  if egg:IsA("Model") and egg:FindFirstChild("Head") then
+    for eggType, pets in pairs(EggPets) do
+      if egg.Name == eggType then
+        assignPetToEgg(egg, pets)
+      end
+    end
+  end
+end
+
+-- Add GUI with Randomize Button
+local ScreenGui = Instance.new("ScreenGui", game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"))
+ScreenGui.Name = "PetRandomizerGui"
+
+local btn = Instance.new("TextButton", ScreenGui)
+btn.Size = UDim2.new(0, 200, 0, 40)
+btn.Position = UDim2.new(0.5, -100, 0.9, 0)
+btn.BackgroundColor3 = Color3.fromRGB(85, 170, 255)
+btn.TextColor3 = Color3.new(1, 1, 1)
+btn.Text = "Randomize Pets"
+btn.TextScaled = true
+btn.Name = "RandomizeButton"
+
+btn.MouseButton1Click:Connect(function()
+  for _, egg in pairs(workspace:GetDescendants()) do
+    if egg:IsA("Model") and egg:FindFirstChild("Head") then
+      for eggType, pets in pairs(EggPets) do
+        if egg.Name == eggType then
+          assignPetToEgg(egg, pets)
+        end
+      end
+    end
+  end
+end)
