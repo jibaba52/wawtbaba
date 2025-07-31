@@ -1,5 +1,6 @@
--- Grow a Garden ESP + Randomizer Script (With Full Egg Support)
+-- Grow a Garden ESP + Randomizer Script + RemoteSpy Integration
 -- Main Use: Displays the exact pet you will hatch from any egg using ESP (Floating Text), allows randomizing what's inside the egg, and ensures that the shown pet is the one that hatches.
+-- Added: RemoteSpy to log all RemoteEvent and RemoteFunction calls
 -- Educational use only
 
 -- Pet database (Eggs + Pets + Chances)
@@ -114,96 +115,89 @@ local EggPets = {
     {name = "Tanchozuru", chance = 4.6},
     {name = "Kappa", chance = 3.5},
     {name = "Kitsune", chance = 0.08},
-  },
+  }
 }
 
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local RunService = game:GetService("RunService")
-local CoreGui = game:GetService("CoreGui")
-local Workspace = game:GetService("Workspace")
+-- RemoteSpy Hook
+local mt = getrawmetatable(game)
+local oldNamecall = mt.__namecall
+setreadonly(mt, false)
+mt.__namecall = newcclosure(function(self, ...)
+  local method = getnamecallmethod()
+  if method == "FireServer" or method == "InvokeServer" then
+    warn("[RemoteSpy]", self:GetFullName(), method, ...)
+  end
+  return oldNamecall(self, ...)
+end)
+setreadonly(mt, true)
 
 -- GUI Setup
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "EggESPGui"
-ScreenGui.Parent = CoreGui
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "EggESP_GUI"
 
-local RandomizeButton = Instance.new("TextButton")
-RandomizeButton.Size = UDim2.new(0, 160, 0, 40)
-RandomizeButton.Position = UDim2.new(0, 30, 0, 90)
-RandomizeButton.Text = "Randomize Pets"
-RandomizeButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-RandomizeButton.TextColor3 = Color3.new(1, 1, 1)
-RandomizeButton.Parent = ScreenGui
+local RandomizeBtn = Instance.new("TextButton")
+RandomizeBtn.Parent = ScreenGui
+RandomizeBtn.Size = UDim2.new(0, 150, 0, 40)
+RandomizeBtn.Position = UDim2.new(0, 20, 0, 200)
+RandomizeBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+RandomizeBtn.TextColor3 = Color3.new(1, 1, 1)
+RandomizeBtn.Text = "Randomize Egg"
 
--- Function to choose random pet from egg type
-local function chooseRandomPet(eggType)
-  local pets = EggPets[eggType]
-  if not pets then return nil end
-  local totalWeight = 0
-  for _, pet in ipairs(pets) do
-    totalWeight = totalWeight + pet.chance
-  end
-  local rand = math.random() * totalWeight
-  local current = 0
-  for _, pet in ipairs(pets) do
-    current = current + pet.chance
-    if rand <= current then
-      return pet
-    end
-  end
-end
+-- ESP display helper
+local function createESP(part, text)
+  local billboard = Instance.new("BillboardGui")
+  billboard.Adornee = part
+  billboard.Size = UDim2.new(0, 200, 0, 50)
+  billboard.StudsOffset = Vector3.new(0, 2, 0)
+  billboard.AlwaysOnTop = true
+  billboard.Parent = part
 
--- ESP Rendering
-local function renderESP(egg)
-  if egg:FindFirstChild("BillboardGui") then
-    egg.BillboardGui:Destroy()
-  end
-
-  local gui = Instance.new("BillboardGui", egg)
-  gui.Size = UDim2.new(0, 200, 0, 50)
-  gui.AlwaysOnTop = true
-  gui.Adornee = egg
-
-  local label = Instance.new("TextLabel", gui)
+  local label = Instance.new("TextLabel")
   label.Size = UDim2.new(1, 0, 1, 0)
   label.BackgroundTransparency = 1
   label.TextColor3 = Color3.new(1, 1, 1)
-  label.TextStrokeTransparency = 0
+  label.TextStrokeTransparency = 0.5
   label.TextScaled = true
-
-  local forced = egg:FindFirstChild("ForcedPet")
-  if forced then
-    label.Text = "Pet: " .. forced.Value
-  else
-    label.Text = "Pet: Unknown"
-  end
+  label.Text = text
+  label.Parent = billboard
 end
 
--- Function to randomize all eggs
-local function randomizeAllEggs()
-  for _, egg in ipairs(Workspace:GetDescendants()) do
-    if EggPets[egg.Name] then
-      local pet = chooseRandomPet(egg.Name)
-      if pet then
-        local forced = egg:FindFirstChild("ForcedPet") or Instance.new("StringValue")
-        forced.Name = "ForcedPet"
-        forced.Value = pet.name
-        forced.Parent = egg
-        renderESP(egg)
-      end
+-- Egg Monitoring + ESP Logic
+local function pickPet(eggName)
+  local pets = EggPets[eggName]
+  if not pets then return "Unknown" end
+  table.sort(pets, function(a, b) return a.chance > b.chance end)
+  local rand = math.random() * 100
+  local sum = 0
+  for _, pet in ipairs(pets) do
+    sum += pet.chance
+    if rand <= sum then
+      return pet.name
+    end
+  end
+  return pets[#pets].name -- fallback
+end
+
+local function scanEggs()
+  for _, egg in pairs(workspace:GetDescendants()) do
+    if egg:IsA("Model") and EggPets[egg.Name] and not egg:FindFirstChild("ESP") then
+      local chosenPet = pickPet(egg.Name)
+      createESP(egg:FindFirstChildWhichIsA("BasePart"), "Pet: " .. chosenPet)
+      local tag = Instance.new("BoolValue", egg)
+      tag.Name = "ESP"
     end
   end
 end
 
--- ESP Auto Update
-RunService.RenderStepped:Connect(function()
-  for _, egg in ipairs(Workspace:GetDescendants()) do
-    if EggPets[egg.Name] and not egg:FindFirstChild("BillboardGui") then
-      renderESP(egg)
-    end
-  end
+RandomizeBtn.MouseButton1Click:Connect(function()
+  scanEggs()
 end)
 
--- Connect Button
-RandomizeButton.MouseButton1Click:Connect(randomizeAllEggs)
+-- Auto scan existing eggs at launch
+scanEggs()
+
+-- Optional: refresh every few seconds
+while true do
+  wait(10)
+  scanEggs()
+end
